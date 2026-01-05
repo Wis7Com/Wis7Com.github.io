@@ -1480,3 +1480,33 @@ footer {
         /* Back to Violet */
     }
 }
+/* --- FINAL MOBILE FIXES (APPENDED TO OVERRIDE ALL) --- */
+@media (max-width: 768px) {
+    /* Force Highlights Grid to Single Column */
+    .highlights-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        grid-template-columns: 1fr !important; /* Fallback */
+        gap: 1.5rem !important;
+    }
+
+    /* Ensure Highlight Cards fit container */
+    .highlight-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+    }
+
+    /* Fix Hero Scroll Overlap */
+    .hero-scroll-container {
+        position: relative !important; /* Stop overlapping absolute */
+        margin-top: 3rem !important;
+        padding-bottom: 2rem !important;
+    }
+
+    /* Ensure Hero Visual has space */
+    .hero-visual {
+        margin-bottom: 1rem;
+    }
+}
+
