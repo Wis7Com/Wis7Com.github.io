@@ -330,6 +330,10 @@ footer {
     .cta-group {
         justify-content: center;
     }
+
+    .highlights-grid {
+        grid-template-columns: 1fr !important;
+    }
 }
 
 /* Projects Section Styling */
