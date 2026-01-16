@@ -70,10 +70,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         navItems.forEach(a => {
             a.classList.remove('active');
-            if (a.getAttribute('href').includes(current)) {
-                if (current !== '') { // prevent highlighting 'Home' if no ID matches perfectly at top
-                    a.classList.add('active');
-                }
+            // Use exact matching: href should be exactly '#' + current
+            if (current && a.getAttribute('href') === `#${current}`) {
+                a.classList.add('active');
             }
         });
 
