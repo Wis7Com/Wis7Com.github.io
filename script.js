@@ -58,29 +58,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('scroll', () => {
         let current = '';
+        const scrollPosition = window.scrollY + 200; // Offset for header
 
+        // Find which section we're currently in
         sections.forEach(section => {
             const sectionTop = section.offsetTop;
-            const sectionHeight = section.clientHeight;
-            // Adjustment for sticky header height (e.g., 100px)
-            if (pageYOffset >= (sectionTop - 150)) {
+            const sectionBottom = sectionTop + section.offsetHeight;
+
+            // Check if scroll position is within this section
+            if (scrollPosition >= sectionTop && scrollPosition < sectionBottom) {
                 current = section.getAttribute('id');
             }
         });
 
+        // Update active states
         navItems.forEach(a => {
             a.classList.remove('active');
-            // Use exact matching: href should be exactly '#' + current
             if (current && a.getAttribute('href') === `#${current}`) {
                 a.classList.add('active');
             }
         });
 
-        // Edge case: If at top of page, highlight Home/first link if 'home' ID is set
+        // Edge case: If at very top of page, highlight Home
         if (window.scrollY < 100) {
-            // Provide a fallback or specific check if 'home' is the first section id
-            const firstLink = document.querySelector('.nav-links a[href="#home"]');
-            if (firstLink) firstLink.classList.add('active');
+            navItems.forEach(a => a.classList.remove('active'));
+            const homeLink = document.querySelector('.nav-links a[href="#home"]');
+            if (homeLink) homeLink.classList.add('active');
         }
     });
 
