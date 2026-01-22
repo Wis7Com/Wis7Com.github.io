@@ -154,4 +154,114 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    // --- HASHNODE BLOG FETCHING ---
+    const fetchHashnodePosts = async () => {
+        const container = document.getElementById('blog-posts-container');
+        if (!container) return;
+
+        const query = `
+            query {
+                publication(host: "justice-ai.hashnode.dev") {
+                    pinnedPost {
+                        title
+                        brief
+                        slug
+                        coverImage {
+                            url
+                        }
+                        publishedAt
+                        url
+                    }
+                    posts(first: 3) {
+                        edges {
+                            node {
+                                title
+                                brief
+                                slug
+                                coverImage {
+                                    url
+                                }
+                                publishedAt
+                                url
+                            }
+                        }
+                    }
+                }
+            }
+        `;
+
+        try {
+            const response = await fetch('https://gql.hashnode.com', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ query }),
+            });
+
+            const data = await response.json();
+            const publication = data.data.publication;
+            const pinnedPost = publication.pinnedPost;
+            const latestPosts = publication.posts.edges.map(edge => edge.node);
+
+            let displayPosts = [];
+
+            // 1. Add Pinned Post if it exists
+            if (pinnedPost) {
+                displayPosts.push(pinnedPost);
+            }
+
+            // 2. Add latest posts, avoiding duplicates
+            for (const post of latestPosts) {
+                if (displayPosts.length >= 3) break;
+
+                // Check if already added (compare URL or Slug)
+                const isDuplicate = displayPosts.some(p => p.url === post.url);
+                if (!isDuplicate) {
+                    displayPosts.push(post);
+                }
+            }
+
+            if (displayPosts.length > 0) {
+                container.innerHTML = ''; // Clear loading spinner
+
+                displayPosts.forEach(node => {
+                    const date = new Date(node.publishedAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                    });
+
+                    // Create Article Card
+                    const articleHTML = `
+                        <article class="article-card">
+                            <div class="article-content">
+                                <div class="article-meta">
+                                    <span class="article-tag">Blog</span>
+                                    <span class="article-date">${date}</span>
+                                </div>
+                                <h3>${node.title}</h3>
+                                <p>${node.brief}</p>
+                                <a href="${node.url}" target="_blank" class="read-more">Read Article →</a>
+                            </div>
+                        </article>
+                    `;
+                    container.innerHTML += articleHTML;
+                });
+
+                // Re-observe new elements for animation
+                const newCards = container.querySelectorAll('.article-card');
+                newCards.forEach(card => observer.observe(card));
+
+            } else {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No posts found.</p>';
+            }
+
+        } catch (error) {
+            console.error('Error fetching Hashnode posts:', error);
+            container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Failed to load posts. <a href="https://justice-ai.hashnode.dev/" target="_blank" style="color: var(--accent-1);">Visit Blog</a></p>';
+        }
+    };
+
+    fetchHashnodePosts();
 });
