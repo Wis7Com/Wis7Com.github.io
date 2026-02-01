@@ -159,6 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('blog-posts-container');
         if (!container) return;
 
+        // Fetch slightly more posts (5) to ensure we have enough after filtering duplicates
         const query = `
             query {
                 publication(host: "justice-ai.hashnode.dev") {
@@ -172,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         publishedAt
                         url
                     }
-                    posts(first: 3) {
+                    posts(first: 5) {
                         edges {
                             node {
                                 title
@@ -191,12 +192,15 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         try {
+            // Using logic to fetch Pinned + 2 Latest Unique Posts
+            // Added cache: 'no-store' to ensure fresh data on every reload
             const response = await fetch('https://gql.hashnode.com', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ query }),
+                cache: 'no-store'
             });
 
             const data = await response.json();
@@ -208,11 +212,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 1. Add Pinned Post if it exists
             if (pinnedPost) {
+                // Attach a flag to identify it as pinned for styling
+                pinnedPost.isPinned = true;
                 displayPosts.push(pinnedPost);
             }
 
             // 2. Add latest posts, avoiding duplicates
             for (const post of latestPosts) {
+                // Stop once we have 3 posts total
                 if (displayPosts.length >= 3) break;
 
                 // Check if already added (compare URL or Slug)
@@ -232,12 +239,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         day: 'numeric'
                     });
 
+                    // Determine Tag HTML: "Pinned" or standard "Blog"
+                    let tagHTML = '<span class="article-tag">Blog</span>';
+                    if (node.isPinned) {
+                        tagHTML = '<span class="article-tag pinned">Pinned</span>';
+                    }
+
                     // Create Article Card
                     const articleHTML = `
                         <article class="article-card">
                             <div class="article-content">
                                 <div class="article-meta">
-                                    <span class="article-tag">Blog</span>
+                                    ${tagHTML}
                                     <span class="article-date">${date}</span>
                                 </div>
                                 <h3>${node.title}</h3>

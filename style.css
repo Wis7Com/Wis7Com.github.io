@@ -1510,3 +1510,9 @@ footer {
     }
 }
 
+
+.article-tag.pinned {
+    background: var(--accent-1);
+    color: #0f172a;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+}
