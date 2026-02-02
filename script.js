@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Personal Website Loaded');
 
     // Mobile Navigation Toggle
     const hamburger = document.querySelector('.hamburger');
@@ -159,7 +158,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('blog-posts-container');
         if (!container) return;
 
-        // Fetch slightly more posts (5) to ensure we have enough after filtering duplicates
         const query = `
             query {
                 publication(host: "justice-ai.hashnode.dev") {
@@ -191,38 +189,49 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         `;
 
+        // Phase 2: AbortController for 10s timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
         try {
-            // Using logic to fetch Pinned + 2 Latest Unique Posts
-            // Added cache: 'no-store' to ensure fresh data on every reload
-            const response = await fetch('https://gql.hashnode.com', {
+            const response = await fetch('https://hashnode-proxy.jkhome.workers.dev', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ query }),
-                cache: 'no-store'
+                cache: 'no-store',
+                signal: controller.signal
             });
+            clearTimeout(timeoutId);
+
+            // Phase 1: HTTP status validation
+            if (!response.ok) {
+                throw new Error(`HTTP error: ${response.status}`);
+            }
 
             const data = await response.json();
+
+            // Phase 1: API response structure validation
+            if (!data?.data?.publication) {
+                throw new Error('Invalid API response structure');
+            }
+
             const publication = data.data.publication;
             const pinnedPost = publication.pinnedPost;
             const latestPosts = publication.posts.edges.map(edge => edge.node);
 
-            let displayPosts = [];
+            const displayPosts = [];
 
-            // 1. Add Pinned Post if it exists
+            // 1. Add Pinned Post if exists (Phase 2: immutable pattern)
             if (pinnedPost) {
-                // Attach a flag to identify it as pinned for styling
-                pinnedPost.isPinned = true;
-                displayPosts.push(pinnedPost);
+                displayPosts.push({ ...pinnedPost, isPinned: true });
             }
 
             // 2. Add latest posts, avoiding duplicates
             for (const post of latestPosts) {
-                // Stop once we have 3 posts total
                 if (displayPosts.length >= 3) break;
 
-                // Check if already added (compare URL or Slug)
                 const isDuplicate = displayPosts.some(p => p.url === post.url);
                 if (!isDuplicate) {
                     displayPosts.push(post);
@@ -230,23 +239,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (displayPosts.length > 0) {
-                container.innerHTML = ''; // Clear loading spinner
-
-                displayPosts.forEach(node => {
+                // Phase 3: Build all HTML at once, single DOM update
+                const articlesHTML = displayPosts.map(node => {
                     const date = new Date(node.publishedAt).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'short',
                         day: 'numeric'
                     });
 
-                    // Determine Tag HTML: "Pinned" or standard "Blog"
-                    let tagHTML = '<span class="article-tag">Blog</span>';
-                    if (node.isPinned) {
-                        tagHTML = '<span class="article-tag pinned">Pinned</span>';
-                    }
+                    const tagHTML = node.isPinned
+                        ? '<span class="article-tag pinned">Pinned</span>'
+                        : '<span class="article-tag">Blog</span>';
 
-                    // Create Article Card
-                    const articleHTML = `
+                    return `
                         <article class="article-card">
                             <div class="article-content">
                                 <div class="article-meta">
@@ -259,8 +264,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                         </article>
                     `;
-                    container.innerHTML += articleHTML;
-                });
+                }).join('');
+
+                container.innerHTML = articlesHTML;
 
                 // Re-observe new elements for animation
                 const newCards = container.querySelectorAll('.article-card');
@@ -271,8 +277,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
         } catch (error) {
-            console.error('Error fetching Hashnode posts:', error);
-            container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Failed to load posts. <a href="https://justice-ai.hashnode.dev/" target="_blank" style="color: var(--accent-1);">Visit Blog</a></p>';
+            clearTimeout(timeoutId);
+            // Phase 4: Improved error messaging
+            const errorType = error.name === 'AbortError' ? 'timeout' : 'fetch';
+            console.error(`Blog ${errorType} error:`, error.message);
+            container.innerHTML = `
+                <p style="text-align: center; color: var(--text-secondary);">
+                    Failed to load posts.
+                    <a href="https://justice-ai.hashnode.dev/" target="_blank" style="color: var(--accent-1);">
+                        Visit Blog
+                    </a>
+                </p>`;
         }
     };
 
