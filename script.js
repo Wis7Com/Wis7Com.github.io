@@ -225,9 +225,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const pinnedPost = publication.pinnedPost;
             const latestPosts = publication.posts.edges.map(edge => edge.node);
 
-            // Debug logging
-            console.log('[Blog] First post from API:', latestPosts[0]?.title, latestPosts[0]?.publishedAt);
-
             const displayPosts = [];
 
             // 1. Add Pinned Post if exists (Phase 2: immutable pattern)
