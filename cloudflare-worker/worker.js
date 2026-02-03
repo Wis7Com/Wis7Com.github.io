@@ -29,15 +29,21 @@ export default {
     try {
       const body = await request.json();
 
-      // Forward request to Hashnode API (server-side, no browser headers)
+      // Forward request to Hashnode API with cache bypass
+      const requestId = Date.now() + '-' + Math.random().toString(36).slice(2);
       const response = await fetch(HASHNODE_API, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'CloudflareWorker/1.0'
+          'User-Agent': 'CloudflareWorker/1.0',
+          'X-Request-ID': requestId
         },
         body: JSON.stringify(body),
-        cf: { cacheTtl: 0 }
+        cf: {
+          cacheTtl: 0,
+          cacheEverything: false,
+          cacheKey: requestId
+        }
       });
 
       const data = await response.text();
