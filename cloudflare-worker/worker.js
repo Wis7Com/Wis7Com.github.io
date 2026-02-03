@@ -42,7 +42,7 @@ export default {
 
       const data = await response.text();
 
-      // Return with CORS headers
+      // Return with CORS headers and aggressive cache prevention
       return new Response(data, {
         status: response.status,
         headers: {
@@ -50,7 +50,9 @@ export default {
           'Access-Control-Allow-Origin': isAllowed ? origin : ALLOWED_ORIGINS[0],
           'Access-Control-Allow-Methods': 'POST, OPTIONS',
           'Access-Control-Allow-Headers': 'Content-Type',
-          'Cache-Control': 'no-store'
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         }
       });
     } catch (error) {
