@@ -3,7 +3,7 @@
  * Bypasses CDN caching by making server-side requests
  */
 
-const HASHNODE_API = 'https://gql.hashnode.com';
+const HASHNODE_API_BASE = 'https://gql.hashnode.com';
 const ALLOWED_ORIGINS = [
   'https://wis7com.github.io',
   'http://localhost',
@@ -31,7 +31,8 @@ export default {
 
       // Forward request to Hashnode API with cache bypass
       const requestId = Date.now() + '-' + Math.random().toString(36).slice(2);
-      const response = await fetch(HASHNODE_API, {
+      const hashnodeUrl = `${HASHNODE_API_BASE}?_nocache=${requestId}`;
+      const response = await fetch(hashnodeUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
