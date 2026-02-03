@@ -194,7 +194,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
         try {
-            const response = await fetch('https://hashnode-proxy.jkhome.workers.dev', {
+            // Add timestamp to bust any CDN/proxy caching
+            const url = `https://hashnode-proxy.jkhome.workers.dev?_t=${Date.now()}`;
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
