@@ -158,8 +158,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('blog-posts-container');
         if (!container) return;
 
+        // Add unique operation name to bypass CDN caching
+        const uniqueId = Date.now();
         const query = `
-            query {
+            query FetchPosts_${uniqueId} {
                 publication(host: "justice-ai.hashnode.dev") {
                     pinnedPost {
                         title
