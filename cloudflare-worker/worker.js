@@ -37,7 +37,9 @@ export default {
         headers: {
           'Content-Type': 'application/json',
           'User-Agent': 'CloudflareWorker/1.0',
-          'X-Request-ID': requestId
+          'X-Request-ID': requestId,
+          'Cache-Control': 'no-cache, no-store',
+          'Pragma': 'no-cache'
         },
         body: JSON.stringify(body),
         cf: {
