@@ -36,7 +36,8 @@ export default {
           'Content-Type': 'application/json',
           'User-Agent': 'CloudflareWorker/1.0'
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
+        cf: { cacheTtl: 0 }
       });
 
       const data = await response.text();
