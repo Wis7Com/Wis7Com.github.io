@@ -222,25 +222,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const publication = data.data.publication;
-            const pinnedPost = publication.pinnedPost;
+            const pinnedPostUrl = publication.pinnedPost?.url;
             const latestPosts = publication.posts.edges.map(edge => edge.node);
 
-            const displayPosts = [];
-
-            // 1. Add Pinned Post if exists (Phase 2: immutable pattern)
-            if (pinnedPost) {
-                displayPosts.push({ ...pinnedPost, isPinned: true });
-            }
-
-            // 2. Add latest posts, avoiding duplicates
-            for (const post of latestPosts) {
-                if (displayPosts.length >= 3) break;
-
-                const isDuplicate = displayPosts.some(p => p.url === post.url);
-                if (!isDuplicate) {
-                    displayPosts.push(post);
-                }
-            }
+            // Exclude the Hashnode pinned post entirely — we can't unpin it from Hashnode,
+            // so we filter it out on the client and show only the 3 most recent non-pinned posts.
+            const displayPosts = latestPosts
+                .filter(post => post.url !== pinnedPostUrl)
+                .slice(0, 3);
 
             if (displayPosts.length > 0) {
                 // Phase 3: Build all HTML at once, single DOM update
@@ -251,15 +240,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         day: 'numeric'
                     });
 
-                    const tagHTML = node.isPinned
-                        ? '<span class="article-tag pinned">Pinned</span>'
-                        : '<span class="article-tag">Blog</span>';
-
                     return `
                         <article class="article-card">
                             <div class="article-content">
                                 <div class="article-meta">
-                                    ${tagHTML}
+                                    <span class="article-tag">Blog</span>
                                     <span class="article-date">${date}</span>
                                 </div>
                                 <h3>${node.title}</h3>
