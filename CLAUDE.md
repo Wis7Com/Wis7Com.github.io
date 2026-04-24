@@ -1,84 +1,46 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+> Constitution: See `AGENT.md` for the full 3-layer WAT architecture. This file maps it to this project.
 
-## Project Overview
+## The 3-Layer Architecture (This Project)
 
-A personal portfolio website for J. Kang, showcasing work at the intersection of Law, AI, and Digital Economy. Deployed to GitHub Pages at https://Wis7Com.github.io/
+**Layer 1: Directives** — `directives/`
+- `project-guide.md` — Project overview, tech stack, development workflow, Hashnode integration, deployment, troubleshooting
 
-## Tech Stack
+**Layer 2: Orchestration** — You (the AI agent)
+- Read directives, call execution tools, handle errors, update directives with learnings
 
-- **Static site**: Pure HTML, CSS, JavaScript (no build tools or frameworks)
-- **Hosting**: GitHub Pages
-- **Blog API Proxy**: Cloudflare Worker (`hashnode-proxy.jkhome.workers.dev`)
-- **External APIs**: Hashnode GraphQL API for blog posts
-- **Fonts**: Google Fonts (Outfit)
+**Layer 3: Execution** — `execution/`
+- `cloudflare-worker/` — Hashnode API proxy (Cloudflare Worker). Deploy: `cd execution/cloudflare-worker && npx wrangler deploy`
+- `check_hashnode.js` — Verify Hashnode API integration
+- `verify_blog_logic.js` — Validate blog fetching logic
 
-## Development
+## Directory Structure
 
-Open `index.html` directly in a browser or use any local server:
-```bash
-# Python
-python -m http.server 8000
-
-# Node.js (if npx available)
-npx serve .
+```
+├── index.html           # Site entry (root for GitHub Pages)
+├── style.css            # Glassmorphism, animations, responsive
+├── script.js            # Nav, scroll spy, email CAPTCHA, blog fetch
+├── *.png                # Site-referenced project thumbnails
+├── data/                # User input files (banners, QR codes, planning docs)
+│   └── Contents/        # Personal documents (not committed)
+├── directives/          # SOPs & workflow instructions
+├── execution/           # Deterministic scripts & workers
+├── .tmp/                # Intermediate/temp files (not committed)
+├── .env                 # Environment variables (not committed)
+├── AGENT.md             # WAT Constitution (원본)
+└── CLAUDE.md            # This file (project mapping)
 ```
 
-## Architecture
+## Key Principles
 
-### Files
-- `index.html` - Single-page site with sections: Home, About, Projects, Blog, Contact
-- `style.css` - All styling including glassmorphism effects, animations, responsive design
-- `script.js` - Client-side functionality
-- `cloudflare-worker/` - Hashnode API proxy (Cloudflare Worker)
-
-### Key Features in script.js
-- **Mobile navigation**: Hamburger menu toggle
-- **Scroll spy**: Active nav link highlighting based on scroll position
-- **Email CAPTCHA**: Math-based verification before revealing email (Base64 encoded for scrape protection)
-- **Hashnode integration**: Fetches pinned + 2 latest unique posts via GraphQL API
-
-### Styling Patterns
-- CSS custom properties defined in `:root` for theming (Deep Ocean/Nordic palette)
-- Glassmorphism: `var(--glass-bg)`, `var(--glass-border)`, `backdrop-filter: blur()`
-- Accent colors: `--accent-1` (teal), `--accent-2` (sky), `--accent-3` (violet)
-- Animated background blobs with breathing/color-shift keyframes
-
-## Hashnode Blog Integration
-
-### Architecture
-```
-Browser → Cloudflare Worker → Hashnode GraphQL API
-         (hashnode-proxy)     (gql.hashnode.com)
-```
-
-**Why Cloudflare Worker?**
-- Hashnode CDN caches browser requests aggressively → stale posts
-- Worker makes server-side requests → bypasses CDN caching
-- Always returns fresh data
-
-### Worker Location
-- **Source**: `cloudflare-worker/` directory
-- **Deployed URL**: `https://hashnode-proxy.jkhome.workers.dev`
-- **Deploy command**: `cd cloudflare-worker && npx wrangler deploy`
-
-### GraphQL Query
-```graphql
-query {
-  publication(host: "justice-ai.hashnode.dev") {
-    pinnedPost { ... }
-    posts(first: 5) { edges { node { ... } } }
-  }
-}
-```
-
-### Troubleshooting Blog Updates
-1. **Worker 테스트**: `curl -s https://hashnode-proxy.jkhome.workers.dev -H "Content-Type: application/json" -d '{"query":"{ publication(host: \"justice-ai.hashnode.dev\") { posts(first: 1) { edges { node { title } } } } }"}'`
-2. **Worker 로그**: `cd cloudflare-worker && npx wrangler tail`
-3. 새 글이 curl 응답에 있으면 → JS 렌더링 로직 문제
-4. 새 글이 curl 응답에 없으면 → Hashnode API 문제
+1. **Check `execution/` first** before writing new scripts
+2. **Self-anneal**: Fix errors → update tool → test → update directive
+3. **Directives are living documents**: Update them as you learn
+4. **Site files at root**: GitHub Pages deploys from root of `master` branch
+5. **Local files for processing only**: Everything in `.tmp/` can be deleted and regenerated
 
 ## Deployment
 
-Push to `master` branch - GitHub Pages auto-deploys from root.
+- **GitHub Pages**: Push to `master` branch — auto-deploys from root
+- **Cloudflare Worker**: `cd execution/cloudflare-worker && npx wrangler deploy`

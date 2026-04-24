@@ -1,0 +1,26 @@
+{
+  "name": "js-homepage",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Personal portfolio website for J. Kang — static site deployed to GitHub Pages.",
+  "homepage": "https://Wis7Com.github.io/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Wis7Com/Wis7Com.github.io.git"
+  },
+  "license": "SEE LICENSE IN LICENSE",
+  "scripts": {
+    "serve": "npx --yes serve . -l 8000",
+    "dev": "python3 -m http.server 8000",
+    "check:blog": "node execution/check_hashnode.js",
+    "verify:blog": "node execution/verify_blog_logic.js",
+    "worker:deploy": "cd execution/cloudflare-worker && npx --yes wrangler deploy",
+    "worker:tail": "cd execution/cloudflare-worker && npx --yes wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
