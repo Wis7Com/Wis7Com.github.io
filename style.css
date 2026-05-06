@@ -941,6 +941,17 @@ footer {
     /* Revert to dim gray */
 }
 
+.citation-item .pub-info a {
+    color: var(--accent-2);
+    text-decoration-color: rgba(56, 189, 248, 0.55);
+    text-underline-offset: 0.16em;
+}
+
+.citation-item .pub-info a:hover {
+    color: var(--accent-1);
+    text-decoration-color: rgba(45, 212, 191, 0.75);
+}
+
 
 /* Activity Role Font Size Fix (User Request) */
 .citation-item .activity-role {
