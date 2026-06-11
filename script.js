@@ -153,86 +153,37 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    // --- HASHNODE BLOG FETCHING ---
+    // --- BLOG POST FETCHING ---
     const fetchHashnodePosts = async () => {
         const container = document.getElementById('blog-posts-container');
         if (!container) return;
 
-        // Add unique operation name to bypass CDN caching
-        const uniqueId = Date.now();
-        const query = `
-            query FetchPosts_${uniqueId} {
-                publication(host: "justice-ai.hashnode.dev") {
-                    pinnedPost {
-                        title
-                        brief
-                        slug
-                        coverImage {
-                            url
-                        }
-                        publishedAt
-                        url
-                    }
-                    posts(first: 5) {
-                        edges {
-                            node {
-                                title
-                                brief
-                                slug
-                                coverImage {
-                                    url
-                                }
-                                publishedAt
-                                url
-                            }
-                        }
-                    }
-                }
-            }
-        `;
-
-        // Phase 2: AbortController for 10s timeout
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
         try {
-            // Add timestamp to bust any CDN/proxy caching
-            const url = `https://hashnode-proxy.jkhome.workers.dev?_t=${Date.now()}`;
+            const url = `/data/blog-posts.json?_t=${Date.now()}`;
             const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ query }),
                 cache: 'no-store',
                 signal: controller.signal
             });
             clearTimeout(timeoutId);
 
-            // Phase 1: HTTP status validation
             if (!response.ok) {
                 throw new Error(`HTTP error: ${response.status}`);
             }
 
-            const data = await response.json();
-
-            // Phase 1: API response structure validation
-            if (!data?.data?.publication) {
-                throw new Error('Invalid API response structure');
+            const posts = await response.json();
+            if (!Array.isArray(posts)) {
+                throw new Error('Invalid blog post data');
             }
 
-            const publication = data.data.publication;
-            const pinnedPostUrl = publication.pinnedPost?.url;
-            const latestPosts = publication.posts.edges.map(edge => edge.node);
-
-            // Exclude the Hashnode pinned post entirely — we can't unpin it from Hashnode,
-            // so we filter it out on the client and show only the 3 most recent non-pinned posts.
-            const displayPosts = latestPosts
-                .filter(post => post.url !== pinnedPostUrl)
+            const displayPosts = posts
+                .filter(post => post?.title && post?.brief && post?.url && post?.publishedAt)
+                .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
                 .slice(0, 3);
 
             if (displayPosts.length > 0) {
-                // Phase 3: Build all HTML at once, single DOM update
                 const articlesHTML = displayPosts.map(node => {
                     const date = new Date(node.publishedAt).toLocaleDateString('en-US', {
                         year: 'numeric',
@@ -257,7 +208,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 container.innerHTML = articlesHTML;
 
-                // Re-observe new elements for animation
                 const newCards = container.querySelectorAll('.article-card');
                 newCards.forEach(card => observer.observe(card));
 
@@ -267,7 +217,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             clearTimeout(timeoutId);
-            // Phase 4: Improved error messaging
             const errorType = error.name === 'AbortError' ? 'timeout' : 'fetch';
             console.error(`Blog ${errorType} error:`, error.message);
             container.innerHTML = `

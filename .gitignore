@@ -1,5 +1,6 @@
 # ---- Personal / working files ----
-data/
+data/*
+!data/blog-posts.json
 .tmp/
 .env
 .env.local
