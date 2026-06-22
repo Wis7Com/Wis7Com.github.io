@@ -1,66 +1,28 @@
-// NOTE: Using global fetch available in Node 18+
+const fs = require('node:fs');
+const path = require('node:path');
 
-const query = `
-    query {
-        publication(host: "justice-ai.hashnode.dev") {
-            pinnedPost {
-                title
-                url
-            }
-            posts(first: 5) {
-                edges {
-                    node {
-                        title
-                        url
-                        publishedAt
-                    }
-                }
-            }
-        }
+const postsPath = path.join(__dirname, '..', 'data', 'blog-posts.json');
+
+function verifyLogic() {
+    const posts = JSON.parse(fs.readFileSync(postsPath, 'utf8'));
+
+    if (!Array.isArray(posts)) {
+        throw new Error('data/blog-posts.json must contain an array');
     }
-`;
 
-async function verifyLogic() {
-    try {
-        const response = await fetch('https://gql.hashnode.com', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ query }),
-            cache: 'no-store'
-        });
-        const data = await response.json();
+    const displayPosts = posts
+        .filter(post => post?.title && post?.brief && post?.url && post?.publishedAt)
+        .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
+        .slice(0, 3);
 
-        const publication = data.data.publication;
-        const pinnedPost = publication.pinnedPost;
-        const latestPosts = publication.posts.edges.map(edge => edge.node);
-
-        console.log("--- RAW DATA ---");
-        console.log("Pinned:", pinnedPost ? pinnedPost.title : "None");
-        console.log("Latest:", latestPosts.map(p => p.title));
-
-        let displayPosts = [];
-
-        if (pinnedPost) {
-            pinnedPost.isPinned = true;
-            displayPosts.push(pinnedPost);
-        }
-
-        for (const post of latestPosts) {
-            if (displayPosts.length >= 3) break;
-            const isDuplicate = displayPosts.some(p => p.url === post.url);
-            if (!isDuplicate) {
-                displayPosts.push(post);
-            }
-        }
-
-        console.log("\n--- DISPLAY POSTS ---");
-        displayPosts.forEach((p, index) => {
-            console.log(`${index + 1}. [${p.isPinned ? "PINNED" : "LATEST"}] ${p.title}`);
-        });
-
-    } catch (e) {
-        console.error(e);
+    if (displayPosts.length === 0) {
+        throw new Error('No valid blog posts found');
     }
+
+    console.log('--- DISPLAY POSTS ---');
+    displayPosts.forEach((post, index) => {
+        console.log(`${index + 1}. ${post.publishedAt} | ${post.title}`);
+    });
 }
 
 verifyLogic();

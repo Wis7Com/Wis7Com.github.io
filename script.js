@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     // --- BLOG POST FETCHING ---
-    const fetchHashnodePosts = async () => {
+    const fetchBlogPosts = async () => {
         const container = document.getElementById('blog-posts-container');
         if (!container) return;
 
@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
         try {
-            const url = `/data/blog-posts.json?_t=${Date.now()}`;
+            const url = `data/blog-posts.json?_t=${Date.now()}`;
             const response = await fetch(url, {
                 cache: 'no-store',
                 signal: controller.signal
@@ -219,15 +219,17 @@ document.addEventListener('DOMContentLoaded', () => {
             clearTimeout(timeoutId);
             const errorType = error.name === 'AbortError' ? 'timeout' : 'fetch';
             console.error(`Blog ${errorType} error:`, error.message);
-            container.innerHTML = `
-                <p style="text-align: center; color: var(--text-secondary);">
-                    Failed to load posts.
-                    <a href="https://justice-ai.hashnode.dev/" target="_blank" style="color: var(--accent-1);">
-                        Visit Blog
-                    </a>
-                </p>`;
+            if (!container.querySelector('.article-card')) {
+                container.innerHTML = `
+                    <p style="text-align: center; color: var(--text-secondary);">
+                        Failed to load posts.
+                        <a href="https://justice-ai.hashnode.dev/" target="_blank" style="color: var(--accent-1);">
+                            Visit Blog
+                        </a>
+                    </p>`;
+            }
         }
     };
 
-    fetchHashnodePosts();
+    fetchBlogPosts();
 });

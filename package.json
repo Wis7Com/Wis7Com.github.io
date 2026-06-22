@@ -12,13 +12,8 @@
   "scripts": {
     "serve": "npx --yes serve . -l 8000",
     "dev": "python3 -m http.server 8000",
-    "check:blog": "node execution/check_hashnode.js",
-    "verify:blog": "node execution/verify_blog_logic.js",
-    "worker:deploy": "cd execution/cloudflare-worker && npx --yes wrangler deploy",
-    "worker:tail": "cd execution/cloudflare-worker && npx --yes wrangler tail"
-  },
-  "devDependencies": {
-    "wrangler": "^3.90.0"
+    "check:blog": "node execution/check_blog_posts.js",
+    "verify:blog": "node execution/verify_blog_logic.js"
   },
   "engines": {
     "node": ">=18"
