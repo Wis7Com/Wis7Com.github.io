@@ -356,8 +356,14 @@ footer {
 
 .projects-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 2rem;
+}
+
+@media (min-width: 769px) and (max-width: 1369px) {
+    #projects .projects-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 .project-card {
@@ -383,6 +389,17 @@ footer {
 
 .project-card .card-content {
     padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.project-card img {
+    margin-top: auto !important;
+}
+
+.project-card .btn {
+    align-self: flex-start;
 }
 
 .project-card h3 {
