@@ -153,81 +153,119 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    // --- BLOG POST FETCHING ---
+    // --- BLOGGER POST FETCHING ---
+    const BLOGGER_FEED_URL = 'https://law7tech.blogspot.com/feeds/posts/default';
+
+    const textFromHtml = (html) => {
+        const document = new DOMParser().parseFromString(html || '', 'text/html');
+        return (document.body.textContent || '').replace(/\s+/g, ' ').trim();
+    };
+
+    const truncateText = (text, maxLength = 180) => {
+        if (text.length <= maxLength) return text;
+        return `${text.slice(0, maxLength - 3).trimEnd()}...`;
+    };
+
+    const parseBloggerEntry = (entry) => {
+        const alternateLink = entry.link?.find(link => link.rel === 'alternate');
+        const url = new URL(alternateLink?.href || '', BLOGGER_FEED_URL);
+
+        if (url.protocol !== 'https:' || url.hostname !== 'law7tech.blogspot.com') {
+            throw new Error('Unexpected Blogger post URL');
+        }
+
+        return {
+            title: entry.title?.$t?.trim(),
+            brief: truncateText(textFromHtml(entry.summary?.$t || entry.content?.$t || '')),
+            url: url.href,
+            publishedAt: entry.published?.$t
+        };
+    };
+
+    // Blogger's JSONP feed works on a static GitHub Pages site without a proxy.
+    const loadBloggerFeed = () => new Promise((resolve, reject) => {
+        const callbackName = `bloggerFeed_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        const script = document.createElement('script');
+        const timeoutId = setTimeout(() => finish(new Error('Blogger feed timed out')), 10000);
+
+        const cleanup = () => {
+            clearTimeout(timeoutId);
+            script.remove();
+            delete window[callbackName];
+        };
+
+        const finish = (error, data) => {
+            cleanup();
+            if (error) reject(error);
+            else resolve(data);
+        };
+
+        window[callbackName] = data => finish(null, data);
+        script.onerror = () => finish(new Error('Blogger feed failed to load'));
+        script.src = `${BLOGGER_FEED_URL}?alt=json-in-script&max-results=3&callback=${encodeURIComponent(callbackName)}`;
+        document.head.appendChild(script);
+    });
+
+    const createBlogCard = (post) => {
+        const article = document.createElement('article');
+        article.className = 'article-card';
+
+        const content = document.createElement('div');
+        content.className = 'article-content';
+
+        const meta = document.createElement('div');
+        meta.className = 'article-meta';
+
+        const tag = document.createElement('span');
+        tag.className = 'article-tag';
+        tag.textContent = 'Blogger';
+
+        const date = document.createElement('span');
+        date.className = 'article-date';
+        date.textContent = new Date(post.publishedAt).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+
+        const title = document.createElement('h3');
+        title.textContent = post.title;
+
+        const brief = document.createElement('p');
+        brief.textContent = post.brief;
+
+        const link = document.createElement('a');
+        link.className = 'read-more';
+        link.href = post.url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = 'Read Article →';
+
+        meta.append(tag, date);
+        content.append(meta, title, brief, link);
+        article.appendChild(content);
+        return article;
+    };
+
     const fetchBlogPosts = async () => {
         const container = document.getElementById('blog-posts-container');
         if (!container) return;
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-
         try {
-            const url = `data/blog-posts.json?_t=${Date.now()}`;
-            const response = await fetch(url, {
-                cache: 'no-store',
-                signal: controller.signal
-            });
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-                throw new Error(`HTTP error: ${response.status}`);
-            }
-
-            const posts = await response.json();
-            if (!Array.isArray(posts)) {
-                throw new Error('Invalid blog post data');
-            }
-
-            const displayPosts = posts
-                .filter(post => post?.title && post?.brief && post?.url && post?.publishedAt)
-                .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
+            const data = await loadBloggerFeed();
+            const displayPosts = (data.feed?.entry || [])
+                .map(parseBloggerEntry)
+                .filter(post => post.title && post.brief && post.url && post.publishedAt)
                 .slice(0, 3);
 
             if (displayPosts.length > 0) {
-                const articlesHTML = displayPosts.map(node => {
-                    const date = new Date(node.publishedAt).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric'
-                    });
-
-                    return `
-                        <article class="article-card">
-                            <div class="article-content">
-                                <div class="article-meta">
-                                    <span class="article-tag">Blog</span>
-                                    <span class="article-date">${date}</span>
-                                </div>
-                                <h3>${node.title}</h3>
-                                <p>${node.brief}</p>
-                                <a href="${node.url}" target="_blank" class="read-more">Read Article →</a>
-                            </div>
-                        </article>
-                    `;
-                }).join('');
-
-                container.innerHTML = articlesHTML;
-
-                const newCards = container.querySelectorAll('.article-card');
-                newCards.forEach(card => observer.observe(card));
-
-            } else {
-                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No posts found.</p>';
+                const cards = displayPosts.map(createBlogCard);
+                container.replaceChildren(...cards);
+                cards.forEach(card => observer.observe(card));
             }
-
         } catch (error) {
-            clearTimeout(timeoutId);
-            const errorType = error.name === 'AbortError' ? 'timeout' : 'fetch';
-            console.error(`Blog ${errorType} error:`, error.message);
-            if (!container.querySelector('.article-card')) {
-                container.innerHTML = `
-                    <p style="text-align: center; color: var(--text-secondary);">
-                        Failed to load posts.
-                        <a href="https://justice-ai.hashnode.dev/" target="_blank" style="color: var(--accent-1);">
-                            Visit Blog
-                        </a>
-                    </p>`;
-            }
+            // Keep the server-rendered fallback cards visible if the feed is unavailable.
+            console.error('Blogger feed error:', error.message);
         }
     };
 
