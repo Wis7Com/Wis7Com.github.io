@@ -524,9 +524,11 @@ footer {
     color: var(--accent-3);
 }
 
-.blog-archive-link {
+.blog-archive-links {
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
+    gap: 1rem;
     margin-top: 2rem;
 }
 
