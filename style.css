@@ -524,6 +524,12 @@ footer {
     color: var(--accent-3);
 }
 
+.blog-archive-link {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
 /* Snapshot Section */
 .snapshot-container {
     max-width: 800px;

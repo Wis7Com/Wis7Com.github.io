@@ -5,15 +5,14 @@
 ## The 3-Layer Architecture (This Project)
 
 **Layer 1: Directives** — `directives/`
-- `project-guide.md` — Project overview, tech stack, development workflow, Hashnode integration, deployment, troubleshooting
+- `project-guide.md` — Project overview, tech stack, development workflow, deployment, troubleshooting
 
 **Layer 2: Orchestration** — You (the AI agent)
 - Read directives, call execution tools, handle errors, update directives with learnings
 
 **Layer 3: Execution** — `execution/`
-- `cloudflare-worker/` — Hashnode API proxy (Cloudflare Worker). Deploy: `cd execution/cloudflare-worker && npx wrangler deploy`
-- `check_hashnode.js` — Verify Hashnode API integration
-- `verify_blog_logic.js` — Validate blog fetching logic
+- `check_blog_posts.js` — Verify the live Blogger feed
+- `verify_blog_logic.js` — Validate Blogger feed parsing logic
 
 ## Directory Structure
 
@@ -43,4 +42,3 @@
 ## Deployment
 
 - **GitHub Pages**: Push to `master` branch — auto-deploys from root
-- **Cloudflare Worker**: `cd execution/cloudflare-worker && npx wrangler deploy`

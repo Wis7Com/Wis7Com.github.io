@@ -1,22 +1,25 @@
-const fs = require('node:fs');
-const path = require('node:path');
+const FEED_URL = 'https://law7tech.blogspot.com/feeds/posts/default?alt=json&max-results=3';
 
-const postsPath = path.join(__dirname, '..', 'data', 'blog-posts.json');
-
-function check() {
-    const posts = JSON.parse(fs.readFileSync(postsPath, 'utf8'));
-
-    if (!Array.isArray(posts)) {
-        throw new Error('data/blog-posts.json must contain an array');
+async function check() {
+    const response = await fetch(FEED_URL);
+    if (!response.ok) {
+        throw new Error(`Blogger feed returned HTTP ${response.status}`);
     }
 
-    console.log(`Found ${posts.length} blog posts in data/blog-posts.json`);
-    posts
-        .slice()
-        .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
-        .forEach((post, index) => {
-            console.log(`${index + 1}. ${post.publishedAt} | ${post.title}`);
-        });
+    const data = await response.json();
+    const entries = data.feed?.entry || [];
+    if (entries.length === 0) {
+        throw new Error('Blogger feed contains no posts');
+    }
+
+    console.log(`Found ${entries.length} recent Blogger posts`);
+    entries.forEach((entry, index) => {
+        const link = entry.link?.find(item => item.rel === 'alternate')?.href;
+        console.log(`${index + 1}. ${entry.published?.$t} | ${entry.title?.$t} | ${link}`);
+    });
 }
 
-check();
+check().catch(error => {
+    console.error(error.message);
+    process.exitCode = 1;
+});

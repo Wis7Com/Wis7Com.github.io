@@ -3,9 +3,9 @@
 Personal portfolio website showcasing work at the intersection of Law, Artificial Intelligence, and Digital Economy.
 
 - **Live site:** https://Wis7Com.github.io/
-- **Blog:** https://justice-ai.hashnode.dev/
+- **Blog:** https://law7tech.blogspot.com/
 - **Hosting:** GitHub Pages (auto-deploys from `master`)
-- **Blog proxy:** Cloudflare Worker at `hashnode-proxy.jkhome.workers.dev`
+- **Blog feed:** Blogger JSONP feed (no API key or proxy required)
 
 ---
 
@@ -24,7 +24,7 @@ npm run serve
 
 Then open http://localhost:8000 in your browser.
 
-That's it for viewing/editing the site. The steps below are only needed if you also want to run the utility scripts or deploy the Cloudflare Worker.
+That's it for viewing/editing the site. The steps below are only needed if you also want to run the utility scripts.
 
 ---
 
@@ -34,7 +34,7 @@ The static site itself has **no build step** and **no dependencies** — just HT
 
 | Tool | Version | Used for |
 |------|---------|----------|
-| Node.js | ≥ 18 | Local dev server, blog scripts, Cloudflare Worker |
+| Node.js | ≥ 18 | Local dev server and blog verification scripts |
 | Python | ≥ 3.9 | CV markdown → DOCX generator |
 | Homebrew | latest | Easiest way to install the above on macOS |
 
@@ -61,7 +61,7 @@ nvm use
 ## Install project dependencies
 
 ```bash
-# Node (installs wrangler locally for the Cloudflare Worker)
+# Node
 npm install
 
 # Python (create a virtualenv to keep it isolated)
@@ -86,10 +86,10 @@ python3 -m http.server 8000
 
 Any edit to `index.html`, `style.css`, or `script.js` is picked up on refresh.
 
-### Verify Hashnode blog integration
+### Verify Blogger integration
 
 ```bash
-npm run check:blog     # hits Hashnode GraphQL directly
+npm run check:blog     # checks the live Blogger feed
 npm run verify:blog    # validates the fetch/filter logic used by the site
 ```
 
@@ -101,17 +101,6 @@ python execution/md_to_docx.py
 ```
 
 Reads `data/CV_Jisung_Kang(Mar2026).md` and writes `data/CV_Jisung_Kang(Mar2026).docx`. The `data/` directory is gitignored — bring your own source files.
-
-### Deploy the Cloudflare Worker (blog proxy)
-
-```bash
-npm run worker:deploy  # cd execution/cloudflare-worker && wrangler deploy
-npm run worker:tail    # stream live logs
-```
-
-First deploy: `npx wrangler login` will open a browser to authenticate.
-
----
 
 ## Deployment (site)
 
@@ -132,11 +121,11 @@ The live site usually reflects the change within a minute.
 ```
 ├── index.html                    # Single-page site (Home, About, Projects, Blog, Contact)
 ├── style.css                     # Glassmorphism, animations, responsive layout
-├── script.js                     # Nav, scroll spy, email CAPTCHA, Hashnode blog fetch
+├── script.js                     # Nav, scroll spy, email CAPTCHA, Blogger feed
 ├── *.png                         # Site-referenced project thumbnails
 ├── README.md                     # You are here
 ├── LICENSE
-├── package.json                  # Node scripts + wrangler devDependency
+├── package.json                  # Local server and blog verification scripts
 ├── requirements.txt              # Python deps (python-docx)
 ├── .nvmrc                        # Node version pin
 ├── .gitignore
@@ -148,12 +137,9 @@ The live site usually reflects the change within a minute.
 │   └── project-guide.md
 │
 ├── execution/                    # Layer 3 — deterministic scripts/tools
-│   ├── check_hashnode.js         # Hashnode API smoke test
+│   ├── check_blog_posts.js       # Live Blogger feed smoke test
 │   ├── verify_blog_logic.js      # Blog fetch/filter sanity check
 │   ├── md_to_docx.py             # CV Markdown → styled DOCX
-│   └── cloudflare-worker/        # Hashnode GraphQL proxy (bypasses CDN cache)
-│       ├── worker.js
-│       └── wrangler.toml
 │
 ├── data/                         # Personal inputs (CVs, planning docs) — GITIGNORED
 └── .tmp/                         # Intermediates — GITIGNORED
@@ -161,16 +147,13 @@ The live site usually reflects the change within a minute.
 
 ---
 
-## Hashnode blog architecture
+## Blogger integration
 
 ```
-Browser ──▶ Cloudflare Worker ──▶ Hashnode GraphQL API
-            (hashnode-proxy)        (gql.hashnode.com)
+Browser ──▶ Blogger JSONP feed ──▶ Latest three posts
 ```
 
-The Worker exists because Hashnode's CDN caches browser requests aggressively, which causes stale posts to show. Proxying through a Worker sidesteps the CDN.
-
-The client (`script.js`) filters out the Hashnode *pinned* post by URL and shows only the 3 most recent non-pinned posts — pinning on Hashnode is otherwise sticky and has no unpin UI.
+The client (`script.js`) requests Blogger's public JSONP feed and renders up to three recent posts. JSONP allows the static GitHub Pages site to read the feed without a server, API key, or cross-origin proxy. If the feed is temporarily unavailable, the fallback cards already present in `index.html` remain visible.
 
 ---
 
@@ -178,9 +161,8 @@ The client (`script.js`) filters out the Hashnode *pinned* post by URL and shows
 
 | Symptom | Check |
 |---------|-------|
-| Site shows old blog posts | `npm run check:blog` — if stale, redeploy the Worker: `npm run worker:deploy` |
+| Site shows old blog posts | Run `npm run check:blog`, then hard-refresh the page if the live feed is current |
 | Local server port in use | Use a different port: `python3 -m http.server 8001` |
-| `wrangler` auth error | `npx wrangler login` then retry |
 | `python-docx` import fails | Make sure the venv is active: `source .venv/bin/activate` |
 | Thumbnails broken | They live at the repo root (`*_thumbnail.png`); verify they're committed |
 
