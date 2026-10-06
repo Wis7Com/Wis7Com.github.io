@@ -9,13 +9,13 @@ Personal portfolio website showcasing work at the intersection of Law, Artificia
 
 ---
 
-## Quick Start (fresh clone on macOS)
+## Quick Start
 
 ```bash
 git clone https://github.com/Wis7Com/Wis7Com.github.io.git
 cd Wis7Com.github.io
 
-# Option A — Python (no install needed)
+# Option A — Python
 python3 -m http.server 8000
 
 # Option B — Node
@@ -30,15 +30,24 @@ That's it for viewing/editing the site. The steps below are only needed if you a
 
 ## Prerequisites
 
-The static site itself has **no build step** and **no dependencies** — just HTML/CSS/JS served from the repo root. Install these only if you want the full tooling.
+The static site itself has **no build step** and **no runtime dependencies** — just HTML/CSS/JS served from the repo root. Install these only if you want the full tooling.
 
 | Tool | Version | Used for |
 |------|---------|----------|
 | Node.js | ≥ 18 | Local dev server and blog verification scripts |
 | Python | ≥ 3.9 | CV markdown → DOCX generator |
-| Homebrew | latest | Easiest way to install the above on macOS |
+| A Node version manager | latest | Recommended for honoring `.nvmrc` on macOS or Windows |
+| Homebrew | latest | Optional convenience install on macOS |
 
-### One-time Mac setup
+### About `.nvmrc`
+
+`.nvmrc` is not an extra dependency. It is a small version pin that tells your Node version manager which Node release this repo expects.
+
+- On macOS/Linux with `nvm`: run `nvm install` then `nvm use`
+- On Windows with `nvm-windows`: run `nvm install <version from .nvmrc>` then `nvm use <that version>`
+- If you already have a compatible Node version installed, you can skip a version manager entirely
+
+### macOS setup
 
 ```bash
 # 1. Install Homebrew (if not already)
@@ -56,6 +65,25 @@ nvm install
 nvm use
 ```
 
+### Windows setup
+
+Use PowerShell or Windows Terminal:
+
+```powershell
+# 1. Install Node.js 18+ directly, or install nvm-windows first
+#    https://github.com/coreybutler/nvm-windows
+
+# 2. If using nvm-windows, install and activate the repo's pinned version
+$nodeVersion = Get-Content .nvmrc
+nvm install $nodeVersion
+nvm use $nodeVersion
+
+# 3. Optional Python setup for DOCX generation
+py -3 -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
 ---
 
 ## Install project dependencies
@@ -64,11 +92,13 @@ nvm use
 # Node
 npm install
 
-# Python (create a virtualenv to keep it isolated)
+# Python (create a virtualenv to keep it isolated on macOS/Linux)
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
+
+Windows activation uses `.venv\Scripts\Activate.ps1` instead of `source .venv/bin/activate`.
 
 Both are optional — skip whichever you don't need.
 
@@ -86,6 +116,8 @@ python3 -m http.server 8000
 
 Any edit to `index.html`, `style.css`, or `script.js` is picked up on refresh.
 
+On Windows, use `py -3 -m http.server 8000` in place of `python3`.
+
 ### Verify Blogger integration
 
 ```bash
@@ -95,12 +127,21 @@ npm run verify:blog    # validates the fetch/filter logic used by the site
 
 ### Generate the CV DOCX from Markdown
 
+macOS/Linux:
+
 ```bash
 source .venv/bin/activate
 python execution/md_to_docx.py
 ```
 
-Reads `data/cv.md` and writes `data/cv.docx`. The `data/` directory is gitignored — bring your own source files.
+Windows PowerShell:
+
+```powershell
+.venv\Scripts\Activate.ps1
+py -3 execution\md_to_docx.py
+```
+
+Input and output files live in the gitignored `data/` directory — bring your own source file.
 
 ## Deployment (site)
 
@@ -139,7 +180,7 @@ The live site usually reflects the change within a minute.
 ├── execution/                    # Layer 3 — deterministic scripts/tools
 │   ├── check_blog_posts.js       # Live Blogger feed smoke test
 │   ├── verify_blog_logic.js      # Blog fetch/filter sanity check
-│   ├── md_to_docx.py             # CV Markdown → styled DOCX
+│   └── md_to_docx.py             # CV Markdown → styled DOCX
 │
 ├── data/                         # Personal inputs (CVs, planning docs) — GITIGNORED
 └── .tmp/                         # Intermediates — GITIGNORED
@@ -163,7 +204,7 @@ The client (`script.js`) requests Blogger's public JSONP feed and renders up to 
 |---------|-------|
 | Site shows old blog posts | Run `npm run check:blog`, then hard-refresh the page if the live feed is current |
 | Local server port in use | Use a different port: `python3 -m http.server 8001` |
-| `python-docx` import fails | Make sure the venv is active: `source .venv/bin/activate` |
+| `python-docx` import fails | Make sure the venv is active: macOS/Linux `source .venv/bin/activate`, Windows `.venv\Scripts\Activate.ps1` |
 | Thumbnails broken | They live at the repo root (`*_thumbnail.png`); verify they're committed |
 
 ---
