@@ -1,6 +1,5 @@
 # ---- Personal / working files ----
-data/*
-!data/blog-posts.json
+data/
 .tmp/
 .env
 .env.local
@@ -38,13 +37,3 @@ desktop.ini
 .agent/
 .claude/
 .omc/
-
-# ---- Local-only (not published) ----
-AGENT.md
-CLAUDE.md
-directives/
-execution/
-package.json
-package-lock.json
-requirements.txt
-.nvmrc
