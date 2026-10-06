@@ -38,3 +38,13 @@ desktop.ini
 .agent/
 .claude/
 .omc/
+
+# ---- Local-only (not published) ----
+AGENT.md
+CLAUDE.md
+directives/
+execution/
+package.json
+package-lock.json
+requirements.txt
+.nvmrc
